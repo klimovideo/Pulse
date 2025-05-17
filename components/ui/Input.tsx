@@ -1,67 +1,68 @@
 import React, { useState } from 'react';
-import { View,
+import {
+  View,
   TextInput,
   Text,
   StyleSheet,
+  TouchableOpacity,
   ViewStyle,
   TextStyle,
   TextInputProps,
-  TouchableOpacity,
 } from 'react-native';
 import Colors from '@/constants/colors';
 import { useThemeStore } from '@/store/themeStore';
-import { Eye, EyeOff } from 'lucide-react-native';
+import { Eye, EyeOff, AlertCircle } from 'lucide-react-native';
 
 interface InputProps extends TextInputProps {
   label?: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+  isPassword?: boolean;
   error?: string;
+  helper?: string;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
-  containerStyle?: ViewStyle;
+  style?: ViewStyle;
   inputStyle?: TextStyle;
   labelStyle?: TextStyle;
-  errorStyle?: TextStyle;
-  isPassword?: boolean;
 }
 
 export const Input: React.FC<InputProps> = ({
   label,
+  value,
+  onChangeText,
+  placeholder,
+  isPassword = false,
   error,
+  helper,
   leftIcon,
   rightIcon,
-  containerStyle,
+  style,
   inputStyle,
   labelStyle,
-  errorStyle,
-  isPassword = false,
   ...rest
 }) => {
+  const [isFocused, setIsFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { theme } = useThemeStore();
   const colors = theme === 'light' ? Colors.light : Colors.dark;
-  const [secureTextEntry, setSecureTextEntry] = useState(isPassword);
 
-  const toggleSecureEntry = () => {
-    setSecureTextEntry(!secureTextEntry);
-  };
+  const handleFocus = () => setIsFocused(true);
+  const handleBlur = () => setIsFocused(false);
 
-  const renderPasswordIcon = () => {
-    if (!isPassword) return null;
-
-    return (
-      <TouchableOpacity onPress={toggleSecureEntry} style={styles.iconContainer}>
-        {secureTextEntry ? (
-          <Eye size={20} color={colors.secondary} />
-        ) : (
-          <EyeOff size={20} color={colors.secondary} />
-        )}
-      </TouchableOpacity>
-    );
-  };
+  const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
   return (
-    <View style={[styles.container, containerStyle]}>
+    <View style={[styles.container, style]}>
       {label && (
-        <Text style={[styles.label, { color: colors.text }, labelStyle]}>
+        <Text
+          style={[
+            styles.label,
+            { color: error ? colors.error : colors.textSecondary },
+            labelStyle,
+          ]}
+        >
           {label}
         </Text>
       )}
@@ -69,29 +70,62 @@ export const Input: React.FC<InputProps> = ({
         style={[
           styles.inputContainer,
           {
-            borderColor: error ? colors.error : colors.border,
-            backgroundColor: theme === 'light' ? '#F9FAFB' : '#1F2937',
+            backgroundColor: colors.inputBackground,
+            borderColor: isFocused
+              ? colors.primary
+              : error
+              ? colors.error
+              : colors.border,
+            borderWidth: isFocused || error ? 2 : 1,
           },
         ]}
       >
-        {leftIcon && <View style={styles.iconContainer}>{leftIcon}</View>}
+        {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
         <TextInput
           style={[
             styles.input,
             {
               color: colors.text,
+              paddingLeft: leftIcon ? 0 : 16,
+              paddingRight: (isPassword || rightIcon) ? 0 : 16,
             },
             inputStyle,
           ]}
-          placeholderTextColor={colors.secondary}
-          secureTextEntry={secureTextEntry}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={colors.inactive}
+          secureTextEntry={isPassword && !showPassword}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          selectionColor={colors.primary}
           {...rest}
         />
-        {isPassword ? renderPasswordIcon() : rightIcon && <View style={styles.iconContainer}>{rightIcon}</View>}
+        {isPassword ? (
+          <TouchableOpacity
+            style={styles.rightIcon}
+            onPress={togglePasswordVisibility}
+            activeOpacity={0.7}
+          >
+            {showPassword ? (
+              <EyeOff size={20} color={colors.secondary} />
+            ) : (
+              <Eye size={20} color={colors.secondary} />
+            )}
+          </TouchableOpacity>
+        ) : (
+          rightIcon && <View style={styles.rightIcon}>{rightIcon}</View>
+        )}
       </View>
       {error && (
-        <Text style={[styles.error, { color: colors.error }, errorStyle]}>
-          {error}
+        <View style={styles.errorContainer}>
+          <AlertCircle size={16} color={colors.error} />
+          <Text style={[styles.error, { color: colors.error }]}>{error}</Text>
+        </View>
+      )}
+      {!error && helper && (
+        <Text style={[styles.helper, { color: colors.textSecondary }]}>
+          {helper}
         </Text>
       )}
     </View>
@@ -110,23 +144,33 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 10,
     overflow: 'hidden',
   },
   input: {
     flex: 1,
     paddingVertical: 12,
-    paddingHorizontal: 12,
     fontSize: 16,
   },
-  iconContainer: {
-    paddingHorizontal: 12,
-    justifyContent: 'center',
+  leftIcon: {
+    paddingLeft: 16,
+    paddingRight: 8,
+  },
+  rightIcon: {
+    paddingRight: 16,
+    paddingLeft: 8,
+  },
+  errorContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 6,
   },
   error: {
     fontSize: 12,
-    marginTop: 4,
+    marginLeft: 6,
+  },
+  helper: {
+    fontSize: 12,
+    marginTop: 6,
   },
 });

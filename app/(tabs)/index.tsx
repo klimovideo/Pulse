@@ -14,13 +14,45 @@ import {
   Clock, 
   Plus, 
   ArrowRight,
-  Activity
+  Activity,
+  CalendarClock,
+  Layers,
+  LucideIcon
 } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
 import { useProjectsStore } from '@/store/projectsStore';
 import { useTasksStore } from '@/store/tasksStore';
+
+interface StatsCardProps {
+  icon: LucideIcon;
+  value: string | number;
+  label: string;
+  color: string;
+  bgColor: string;
+}
+
+const StatsCard: React.FC<StatsCardProps> = ({ icon: Icon, value, label, color, bgColor }) => {
+  const { theme } = useThemeStore();
+  const colors = theme === 'light' ? Colors.light : Colors.dark;
+  
+  return (
+    <Card variant="elevated" style={styles.statsCard}>
+      <View style={styles.statsIconContainer}>
+        <View style={[styles.statsIconBackground, { backgroundColor: bgColor }]}>
+          <Icon size={20} color={color} />
+        </View>
+      </View>
+      <Text style={[styles.statsValue, { color: colors.text }]}>
+        {value}
+      </Text>
+      <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>
+        {label}
+      </Text>
+    </Card>
+  );
+};
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -64,13 +96,21 @@ export default function HomeScreen() {
     ? Math.round((completedTasks.length / userTasks.length) * 100) 
     : 0;
 
+  // Helper for greeting based on time of day
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Доброе утро';
+    if (hour < 18) return 'Добрый день';
+    return 'Добрый вечер';
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View>
-            <Text style={[styles.greeting, { color: colors.text }]}>
-              Добрый день,
+            <Text style={[styles.greeting, { color: colors.textSecondary }]}>
+              {getGreeting()},
             </Text>
             <Text style={[styles.userName, { color: colors.text }]}>
               {user?.name || 'Пользователь'}
@@ -86,55 +126,72 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.statsCards}>
-          <Card variant="elevated" style={styles.statsCard}>
-            <View style={styles.statsIconContainer}>
-              <View style={[styles.statsIconBackground, { backgroundColor: colors.primaryLight }]}>
-                <CheckSquare size={20} color={colors.primary} />
-              </View>
-            </View>
-            <Text style={[styles.statsValue, { color: colors.text }]}>
-              {userTasks.length}
-            </Text>
-            <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>
-              Всего задач
-            </Text>
-          </Card>
+          <StatsCard 
+            icon={Layers}
+            value={activeProjects.length}
+            label="Активные проекты"
+            color={colors.info}
+            bgColor={colors.infoLight}
+          />
+          <StatsCard 
+            icon={CheckSquare}
+            value={userTasks.length}
+            label="Всего задач"
+            color={colors.primary}
+            bgColor={colors.primaryLight}
+          />
+          <StatsCard 
+            icon={Activity}
+            value={`${completionRate}%`}
+            label="Выполнено"
+            color={colors.success}
+            bgColor={colors.successLight}
+          />
+          <StatsCard 
+            icon={CalendarClock}
+            value={tasksDueSoon.length}
+            label="Скоро дедлайн"
+            color={colors.warning}
+            bgColor={colors.warningLight}
+          />
+        </View>
 
-          <Card variant="elevated" style={styles.statsCard}>
-            <View style={styles.statsIconContainer}>
-              <View style={[styles.statsIconBackground, { backgroundColor: colors.successLight }]}>
-                <Activity size={20} color={colors.success} />
-              </View>
+        <View style={styles.progressSection}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Общий прогресс
+          </Text>
+          <Card variant="flat" style={styles.progressCard}>
+            <View style={styles.progressHeader}>
+              <Text style={[styles.progressTitle, { color: colors.text }]}>
+                Задачи
+              </Text>
+              <Text style={[styles.progressStats, { color: colors.textSecondary }]}>
+                {completedTasks.length} / {userTasks.length}
+              </Text>
             </View>
-            <Text style={[styles.statsValue, { color: colors.text }]}>
-              {completionRate}%
-            </Text>
-            <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>
-              Выполнено
-            </Text>
-          </Card>
-
-          <Card variant="elevated" style={styles.statsCard}>
-            <View style={styles.statsIconContainer}>
-              <View style={[styles.statsIconBackground, { backgroundColor: colors.warningLight }]}>
-                <Clock size={20} color={colors.warning} />
-              </View>
-            </View>
-            <Text style={[styles.statsValue, { color: colors.text }]}>
-              {tasksDueSoon.length}
-            </Text>
-            <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>
-              Скоро дедлайн
-            </Text>
+            <ProgressBar 
+              progress={completionRate / 100} 
+              height={8}
+              color={colors.primary}
+              trackColor={theme === 'light' ? '#F1F5F9' : '#1E293B'}
+            />
           </Card>
         </View>
 
         {urgentTasks.length > 0 && (
           <View style={styles.urgentSection}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Требуют внимания
-              </Text>
+              <View style={styles.sectionTitleContainer}>
+                <View style={[styles.priorityIndicator, { backgroundColor: colors.error }]} />
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  Приоритетные задачи
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => router.push('/tasks')}>
+                <Text style={[styles.viewAll, { color: colors.primary }]}>
+                  Все задачи
+                </Text>
+              </TouchableOpacity>
             </View>
             {urgentTasks.slice(0, 2).map(task => (
               <TaskCard key={task.id} task={task} />
@@ -176,6 +233,7 @@ export default function HomeScreen() {
                 variant="primary"
                 size="small"
                 style={styles.createButton}
+                leftIcon={<Plus size={16} color="#FFFFFF" />}
               />
             </Card>
           ) : (
@@ -198,67 +256,35 @@ export default function HomeScreen() {
           )}
         </View>
 
-        <View style={styles.tasksSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Мои задачи
-            </Text>
-            <TouchableOpacity onPress={() => router.push('/tasks')}>
-              <Text style={[styles.viewAll, { color: colors.primary }]}>
-                Все задачи
+        <View style={styles.quickActionsSection}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Быстрые действия
+          </Text>
+          <View style={styles.quickActionsGrid}>
+            <TouchableOpacity 
+              style={[styles.quickActionButton, { backgroundColor: theme === 'light' ? '#F1F5F9' : '#1E293B' }]} 
+              onPress={() => router.push('/tasks/create')}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: colors.primaryLight }]}>
+                <CheckSquare size={20} color={colors.primary} />
+              </View>
+              <Text style={[styles.quickActionText, { color: colors.text }]}>
+                Новая задача
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.quickActionButton, { backgroundColor: theme === 'light' ? '#F1F5F9' : '#1E293B' }]} 
+              onPress={() => router.push('/projects/create')}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: colors.infoLight }]}>
+                <BarChart size={20} color={colors.info} />
+              </View>
+              <Text style={[styles.quickActionText, { color: colors.text }]}>
+                Новый проект
               </Text>
             </TouchableOpacity>
           </View>
-
-          {userTasks.length === 0 ? (
-            <Card variant="elevated" style={styles.emptyStateCard}>
-              <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
-                У вас пока нет назначенных задач
-              </Text>
-              <Button
-                title="Создать задачу"
-                onPress={() => router.push('/tasks/create')}
-                variant="primary"
-                size="small"
-                style={styles.createButton}
-              />
-            </Card>
-          ) : (
-            <>
-              {userTasks
-                .filter(task => task.status !== 'completed')
-                .slice(0, 3)
-                .map(task => (
-                  <TaskCard key={task.id} task={task} />
-                ))}
-              {userTasks.filter(task => task.status !== 'completed').length > 3 && (
-                <TouchableOpacity 
-                  style={styles.viewMoreButton}
-                  onPress={() => router.push('/tasks')}
-                >
-                  <Text style={[styles.viewMoreText, { color: colors.primary }]}>
-                    Показать еще {userTasks.filter(task => task.status !== 'completed').length - 3} задач
-                  </Text>
-                  <ArrowRight size={16} color={colors.primary} />
-                </TouchableOpacity>
-              )}
-            </>
-          )}
-        </View>
-
-        <View style={styles.quickActions}>
-          <Button
-            title="Новый проект"
-            onPress={() => router.push('/projects/create')}
-            leftIcon={<BarChart size={20} color="#FFFFFF" />}
-            style={[styles.actionButton, { marginRight: 8 }]}
-          />
-          <Button
-            title="Новая задача"
-            onPress={() => router.push('/tasks/create')}
-            leftIcon={<Plus size={20} color="#FFFFFF" />}
-            style={[styles.actionButton, { marginLeft: 8 }]}
-          />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -277,30 +303,32 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   greeting: {
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: '500',
   },
   userName: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
+    marginTop: 4,
   },
   statsCards: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     marginBottom: 24,
   },
   statsCard: {
-    flex: 1,
-    marginHorizontal: 4,
-    padding: 12,
-    alignItems: 'center',
+    width: '48%',
+    marginBottom: 16,
+    padding: 16,
   },
   statsIconContainer: {
-    marginBottom: 8,
+    marginBottom: 12,
   },
   statsIconBackground: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -310,17 +338,42 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   statsLabel: {
-    fontSize: 12,
-    textAlign: 'center',
+    fontSize: 14,
   },
-  urgentSection: {
+  progressSection: {
     marginBottom: 24,
+  },
+  progressCard: {
+    padding: 16,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  progressTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  progressStats: {
+    fontSize: 14,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
+  },
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  priorityIndicator: {
+    width: 8,
+    height: 16,
+    borderRadius: 4,
+    marginRight: 8,
   },
   sectionTitle: {
     fontSize: 18,
@@ -329,6 +382,24 @@ const styles = StyleSheet.create({
   viewAll: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  urgentSection: {
+    marginBottom: 24,
+  },
+  projectsSection: {
+    marginBottom: 24,
+  },
+  emptyStateCard: {
+    alignItems: 'center',
+    padding: 24,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  createButton: {
+    minWidth: 180,
   },
   viewMoreButton: {
     flexDirection: 'row',
@@ -339,32 +410,35 @@ const styles = StyleSheet.create({
   viewMoreText: {
     fontSize: 14,
     fontWeight: '600',
-    marginRight: 4,
+    marginRight: 8,
   },
-  projectsSection: {
+  quickActionsSection: {
     marginBottom: 24,
   },
-  tasksSection: {
-    marginBottom: 24,
-  },
-  emptyStateCard: {
-    alignItems: 'center',
-    padding: 24,
-  },
-  emptyStateText: {
-    fontSize: 14,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  createButton: {
-    minWidth: 150,
-  },
-  quickActions: {
+  quickActionsGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 24,
+    flexWrap: 'wrap',
+    marginHorizontal: -8,
   },
-  actionButton: {
-    flex: 1,
+  quickActionButton: {
+    width: '50%',
+    paddingHorizontal: 8,
+    marginBottom: 16,
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  quickActionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  quickActionText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

@@ -63,6 +63,7 @@ function RootLayoutNav() {
         contentStyle: {
           backgroundColor: colors.background,
         },
+        headerShown: false,
       }}
     >
       {isAuthenticated ? (
@@ -73,6 +74,8 @@ function RootLayoutNav() {
             options={{ 
               title: "Проект",
               presentation: "card",
+              headerShown: true,
+              headerTitle: "",
             }} 
           />
           <Stack.Screen 
@@ -80,6 +83,8 @@ function RootLayoutNav() {
             options={{ 
               title: "Задача",
               presentation: "card",
+              headerShown: true,
+              headerTitle: "",
             }} 
           />
           <Stack.Screen 
@@ -87,6 +92,8 @@ function RootLayoutNav() {
             options={{ 
               title: "Пульс проекта",
               presentation: "card",
+              headerShown: true,
+              headerTitle: "",
             }} 
           />
           <Stack.Screen 
@@ -94,6 +101,8 @@ function RootLayoutNav() {
             options={{ 
               title: "Новый проект",
               presentation: "card",
+              headerShown: true,
+              headerTitle: "",
             }} 
           />
           <Stack.Screen 
@@ -101,6 +110,8 @@ function RootLayoutNav() {
             options={{ 
               title: "Новая задача",
               presentation: "card",
+              headerShown: true,
+              headerTitle: "",
             }} 
           />
           <Stack.Screen 
@@ -108,6 +119,8 @@ function RootLayoutNav() {
             options={{ 
               title: "Редактирование профиля",
               presentation: "card",
+              headerShown: true,
+              headerTitle: "",
             }} 
           />
           <Stack.Screen 
@@ -115,6 +128,8 @@ function RootLayoutNav() {
             options={{ 
               title: "Отправить отзыв",
               presentation: "card",
+              headerShown: true,
+              headerTitle: "",
             }} 
           />
         </>
