@@ -69,4 +69,4 @@ npm run dev
 - TypeScript
 - Zustand (управление состоянием)
 - Node.js / Express
-- MongoDB 
+- MongoDB
